@@ -1,19 +1,26 @@
-<?php require_once __DIR__ . '/../Exceptions/InvalidUserStatusException.php';
-class UserStatusEnum
+<?php
+
+declare(strict_types=1);
+require_once __DIR__ . '/../Exceptions/InvalidUserStatusException.php';
+
+final class UserStatusEnum
 {
-    const ACTIVE = 'ACTIVE';
-    const INACTIVE = 'INACTIVE';
-    const PENDING = 'PENDING';
-    const BLOCKED = 'BLOCKED';
-    public static function values()
+    public const ACTIVE = 'ACTIVE';
+    public const INACTIVE = 'INACTIVE';
+    public const PENDING = 'PENDING';
+    public const BLOCKED = 'BLOCKED';
+
+    public static function values(): array
     {
         return array(self::ACTIVE, self::INACTIVE, self::PENDING, self::BLOCKED);
     }
-    public static function isValid($value)
+
+    public static function isValid(string $value): bool
     {
         return in_array($value, self::values(), true);
     }
-    public static function ensureIsValid($value)
+
+    public static function ensureIsValid(string $value): void
     {
         if (!self::isValid($value)) {
             throw InvalidUserStatusException::becauseValueIsInvalid($value);

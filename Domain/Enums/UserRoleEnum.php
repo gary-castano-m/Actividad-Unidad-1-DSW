@@ -1,18 +1,25 @@
-<?php require_once __DIR__ . '/../Exceptions/InvalidUserRoleException.php';
-class UserRoleEnum
+<?php
+
+declare(strict_types=1);
+require_once __DIR__ . '/../Exceptions/InvalidUserRoleException.php';
+
+final class UserRoleEnum
 {
-    const ADMIN = 'ADMIN';
-    const MEMBER = 'MEMBER';
-    const REVIEWER = 'REVIEWER';
-    public static function values()
+    public const ADMIN = 'ADMIN';
+    public const MEMBER = 'MEMBER';
+    public const REVIEWER = 'REVIEWER';
+
+    public static function values(): array
     {
         return array(self::ADMIN, self::MEMBER, self::REVIEWER);
     }
-    public static function isValid($value)
+
+    public static function isValid(string $value): bool
     {
         return in_array($value, self::values(), true);
     }
-    public static function ensureIsValid($value)
+
+    public static function ensureIsValid(string $value): void
     {
         if (!self::isValid($value)) {
             throw InvalidUserRoleException::becauseValueIsInvalid($value);
