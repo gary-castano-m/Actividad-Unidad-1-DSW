@@ -79,4 +79,53 @@ final class DependencyInjection
             self::getUserWebMapper()
         );
     }
+
+    // Asignatura Services
+    public static function getCreateAsignaturaUseCase(): CreateAsignaturaUseCase
+    {
+        ClassLoader::loadClass('CreateAsignaturaService');
+        $repo = self::getAsignaturaRepository();
+        return new CreateAsignaturaService($repo, $repo);
+    }
+
+    public static function getUpdateAsignaturaUseCase(): UpdateAsignaturaUseCase
+    {
+        ClassLoader::loadClass('UpdateAsignaturaService');
+        $repo = self::getAsignaturaRepository();
+        return new UpdateAsignaturaService($repo, $repo);
+    }
+
+    public static function getDeleteAsignaturaUseCase(): DeleteAsignaturaUseCase
+    {
+        ClassLoader::loadClass('DeleteAsignaturaService');
+        $repo = self::getAsignaturaRepository();
+        return new DeleteAsignaturaService($repo, $repo);
+    }
+
+    public static function getGetAsignaturaByIdUseCase(): GetAsignaturaByIdUseCase
+    {
+        ClassLoader::loadClass('GetAsignaturaByIdService');
+        return new GetAsignaturaByIdService(self::getAsignaturaRepository());
+    }
+
+    public static function getGetAllAsignaturasUseCase(): GetAllAsignaturasUseCase
+    {
+        ClassLoader::loadClass('GetAllAsignaturasService');
+        return new GetAllAsignaturasService(self::getAsignaturaRepository());
+    }
+
+    public static function getAsignaturaWebMapper(): AsignaturaWebMapper
+    {
+        ClassLoader::loadClass('AsignaturaWebMapper');
+        return new AsignaturaWebMapper();
+    }
+
+    // Placeholder - Repository será creado en capa de infraestructura
+    private static function getAsignaturaRepository()
+    {
+        // Esto será implementado cuando se cree el AsignaturaRepositoryMySQL
+        // que implementará SaveAsignaturaPort, UpdateAsignaturaPort,
+        // GetAsignaturaByIdPort, GetAllAsignaturasPort, DeleteAsignaturaPort
+        throw new RuntimeException('AsignaturaRepository no ha sido implementado aún');
+    }
 }
