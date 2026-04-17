@@ -60,6 +60,34 @@ final class WebRoutes
                 'method' => 'POST',
                 'action' => 'forgot.send',
             ),
+            'asignaturas.create' => array(
+                'method' => 'GET',
+                'action' => 'create',
+            ),
+            'asignaturas.store' => array(
+                'method' => 'POST',
+                'action' => 'store',
+            ),
+            'asignaturas.index' => array(
+                'method' => 'GET',
+                'action' => 'index',
+            ),
+            'asignaturas.show' => array(
+                'method' => 'GET',
+                'action' => 'show',
+            ),
+            'asignaturas.edit' => array(
+                'method' => 'GET',
+                'action' => 'edit',
+            ),
+            'asignaturas.update' => array(
+                'method' => 'POST',
+                'action' => 'update',
+            ),
+            'asignaturas.delete' => array(
+                'method' => 'POST',
+                'action' => 'delete',
+            ),
         );
     }
 }
