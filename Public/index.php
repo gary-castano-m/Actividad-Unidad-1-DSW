@@ -287,6 +287,119 @@ try {
             View::redirect('auth.forgot');
             break;
 
+        // ── ASIGNATURA: Create (form) ───────────────────────── 
+        case 'asignaturas.create':
+            requireAuth();
+            View::render('asignaturas/create', buildCreateAsignaturaViewData());
+            break;
+
+        // ── ASIGNATURA: Store ──────────────────────────────── 
+        case 'asignaturas.store':
+            requireAuth();
+            $controller = DependencyInjection::getAsignaturaController();
+            $form = getCreateAsignaturaFormData();
+            $form['id'] = generateUuid4();
+            $errors = validateCreateAsignaturaForm($form);
+
+            if (!empty($errors)) {
+                Flash::setOld($form);
+                Flash::setErrors($errors);
+                Flash::setMessage('Corrige los errores del formulario.');
+                View::redirect('asignaturas.create');
+            }
+
+            $request = new CreateAsignaturaRequest(
+                $form['id'],
+                $form['nombre'],
+                $form['nombreCompleto'],
+                $form['descripcion'],
+                $form['areaConocimiento'],
+                $form['carrera'],
+                (int) $form['numeroCreditos'],
+                $form['contenidoTematico'],
+                (int) $form['semestre'],
+                $form['profesor']
+            );
+            $controller->store($request);
+
+            Flash::setSuccess('Asignatura creada correctamente.');
+            View::redirect('asignaturas.index');
+            break;
+
+        // ── ASIGNATURA: Index ───────────────────────────────── 
+        case 'asignaturas.index':
+            requireAuth();
+            $controller = DependencyInjection::getAsignaturaController();
+            $asignaturas = $controller->index();
+            View::render('asignaturas/list', buildListAsignaturasViewData($asignaturas));
+            break;
+
+        // ── ASIGNATURA: Show ────────────────────────────────── 
+        case 'asignaturas.show':
+            requireAuth();
+            $controller = DependencyInjection::getAsignaturaController();
+            $id = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
+            $asignatura = $controller->show($id);
+            View::render('asignaturas/show', array(
+                'pageTitle' => 'Detalle de Asignatura',
+                'asignatura' => $asignatura,
+                'message' => Flash::message(),
+            ));
+            break;
+
+        // ── ASIGNATURA: Edit ────────────────────────────────── 
+        case 'asignaturas.edit':
+            requireAuth();
+            $controller = DependencyInjection::getAsignaturaController();
+            $id = isset($_GET['id']) ? trim((string) $_GET['id']) : '';
+            $asignatura = $controller->show($id);
+            View::render('asignaturas/edit', buildEditAsignaturaViewData($asignatura));
+            break;
+
+        // ── ASIGNATURA: Update ──────────────────────────────── 
+        case 'asignaturas.update':
+            requireAuth();
+            $controller = DependencyInjection::getAsignaturaController();
+            $form = getUpdateAsignaturaFormData();
+            $errors = validateUpdateAsignaturaForm($form);
+
+            if (!empty($errors)) {
+                Flash::setOld($form);
+                Flash::setErrors($errors);
+                Flash::setMessage('Corrige los errores del formulario.');
+                header('Location: ?route=asignaturas.edit&id=' . urlencode($form['id']));
+                exit;
+            }
+
+            $request = new UpdateAsignaturaRequest(
+                $form['id'],
+                $form['nombre'],
+                $form['nombreCompleto'],
+                $form['descripcion'],
+                $form['areaConocimiento'],
+                $form['carrera'],
+                (int) $form['numeroCreditos'],
+                $form['contenidoTematico'],
+                (int) $form['semestre'],
+                $form['profesor']
+            );
+
+            $controller->update($request);
+
+            Flash::setSuccess('Asignatura actualizada correctamente.');
+            View::redirect('asignaturas.index');
+            break;
+
+        // ── ASIGNATURA: Delete ──────────────────────────────── 
+        case 'asignaturas.delete':
+            requireAuth();
+            $controller = DependencyInjection::getAsignaturaController();
+            $id = isset($_POST['id']) ? trim((string) $_POST['id']) : '';
+            $controller->delete($id);
+            Flash::setSuccess('Asignatura eliminada correctamente.');
+            View::redirect('asignaturas.index');
+            break;
+
         default:
             throw new RuntimeException('Acción no soportada.');
     }
@@ -324,6 +437,27 @@ try {
         case 'users.delete':
             Flash::setMessage($msg);
             View::redirect('users.index');
+            break;
+
+        case 'asignaturas.store':
+            Flash::setOld(getCreateAsignaturaFormData());
+            View::redirect('asignaturas.create');
+            break;
+
+        case 'asignaturas.update':
+            $updateId = trim((string) ($_POST['id'] ?? ''));
+            Flash::setOld(getUpdateAsignaturaFormData());
+            header('Location: ?route=asignaturas.edit&id=' . urlencode($updateId));
+            exit;
+
+        case 'asignaturas.show':
+        case 'asignaturas.edit':
+            View::redirect('asignaturas.index');
+            break;
+
+        case 'asignaturas.delete':
+            Flash::setMessage($msg);
+            View::redirect('asignaturas.index');
             break;
 
         default:
@@ -524,6 +658,182 @@ function validateUpdateUserForm(array $form): array
 
     if ($form['status'] === '') {
         $errors['status'] = 'El estado es obligatorio.';
+    }
+
+    return $errors;
+}
+// ────────────────────────────────────────────────────────────── 
+// ASIGNATURA: Helpers (Form Data Builders) 
+// ────────────────────────────────────────────────────────────── 
+
+/**
+ * @return array<string, mixed>
+ */
+function buildListAsignaturasViewData(array $asignaturas): array
+{
+    return array(
+        'pageTitle' => 'Lista de Asignaturas',
+        'asignaturas' => $asignaturas,
+        'message' => Flash::message(),
+        'success' => Flash::success(),
+    );
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function buildCreateAsignaturaViewData(): array
+{
+    return array(
+        'pageTitle' => 'Crear Asignatura',
+        'message' => Flash::message(),
+        'success' => Flash::success(),
+        'errors' => Flash::errors(),
+        'old' => Flash::old(),
+    );
+}
+
+/**
+ * @param AsignaturaResponse $asignatura
+ * @return array<string, mixed>
+ */
+function buildEditAsignaturaViewData(AsignaturaResponse $asignatura): array
+{
+    return array(
+        'pageTitle' => 'Editar Asignatura',
+        'asignatura' => $asignatura,
+        'message' => Flash::message(),
+        'errors' => Flash::errors(),
+        'old' => Flash::old(),
+    );
+}
+
+/**
+ * @return array<string, string|int>
+ */
+function getCreateAsignaturaFormData(): array
+{
+    return array(
+        'nombre' => isset($_POST['nombre']) ? trim((string) $_POST['nombre']) : '',
+        'nombreCompleto' => isset($_POST['nombreCompleto']) ? trim((string) $_POST['nombreCompleto']) : '',
+        'descripcion' => isset($_POST['descripcion']) ? trim((string) $_POST['descripcion']) : '',
+        'areaConocimiento' => isset($_POST['areaConocimiento']) ? trim((string) $_POST['areaConocimiento']) : '',
+        'carrera' => isset($_POST['carrera']) ? trim((string) $_POST['carrera']) : '',
+        'numeroCreditos' => isset($_POST['numeroCreditos']) ? trim((string) $_POST['numeroCreditos']) : '',
+        'contenidoTematico' => isset($_POST['contenidoTematico']) ? trim((string) $_POST['contenidoTematico']) : '',
+        'semestre' => isset($_POST['semestre']) ? trim((string) $_POST['semestre']) : '',
+        'profesor' => isset($_POST['profesor']) ? trim((string) $_POST['profesor']) : '',
+    );
+}
+
+/**
+ * @return array<string, string|int>
+ */
+function getUpdateAsignaturaFormData(): array
+{
+    return array(
+        'id' => isset($_POST['id']) ? trim((string) $_POST['id']) : '',
+        'nombre' => isset($_POST['nombre']) ? trim((string) $_POST['nombre']) : '',
+        'nombreCompleto' => isset($_POST['nombreCompleto']) ? trim((string) $_POST['nombreCompleto']) : '',
+        'descripcion' => isset($_POST['descripcion']) ? trim((string) $_POST['descripcion']) : '',
+        'areaConocimiento' => isset($_POST['areaConocimiento']) ? trim((string) $_POST['areaConocimiento']) : '',
+        'carrera' => isset($_POST['carrera']) ? trim((string) $_POST['carrera']) : '',
+        'numeroCreditos' => isset($_POST['numeroCreditos']) ? trim((string) $_POST['numeroCreditos']) : '',
+        'contenidoTematico' => isset($_POST['contenidoTematico']) ? trim((string) $_POST['contenidoTematico']) : '',
+        'semestre' => isset($_POST['semestre']) ? trim((string) $_POST['semestre']) : '',
+        'profesor' => isset($_POST['profesor']) ? trim((string) $_POST['profesor']) : '',
+    );
+}
+
+/**
+ * @param array<string, mixed> $form
+ * @return array<string, string>
+ */
+function validateCreateAsignaturaForm(array $form): array
+{
+    $errors = array();
+
+    if ($form['nombre'] === '') {
+        $errors['nombre'] = 'El nombre es obligatorio.';
+    }
+
+    if ($form['nombreCompleto'] === '') {
+        $errors['nombreCompleto'] = 'El nombre completo es obligatorio.';
+    }
+
+    if ($form['descripcion'] === '') {
+        $errors['descripcion'] = 'La descripción es obligatoria.';
+    }
+
+    if ($form['areaConocimiento'] === '') {
+        $errors['areaConocimiento'] = 'El área de conocimiento es obligatoria.';
+    }
+
+    if ($form['carrera'] === '') {
+        $errors['carrera'] = 'La carrera es obligatoria.';
+    }
+
+    if ($form['numeroCreditos'] === '' || !is_numeric($form['numeroCreditos'])) {
+        $errors['numeroCreditos'] = 'El número de créditos es obligatorio y debe ser un número.';
+    }
+
+    if ($form['contenidoTematico'] === '') {
+        $errors['contenidoTematico'] = 'El contenido temático es obligatorio.';
+    }
+
+    if ($form['semestre'] === '' || !is_numeric($form['semestre'])) {
+        $errors['semestre'] = 'El semestre es obligatorio y debe ser un número.';
+    }
+
+    if ($form['profesor'] === '') {
+        $errors['profesor'] = 'El profesor es obligatorio.';
+    }
+
+    return $errors;
+}
+
+/**
+ * @param array<string, mixed> $form
+ * @return array<string, string>
+ */
+function validateUpdateAsignaturaForm(array $form): array
+{
+    $errors = array();
+
+    if ($form['nombre'] === '') {
+        $errors['nombre'] = 'El nombre es obligatorio.';
+    }
+
+    if ($form['nombreCompleto'] === '') {
+        $errors['nombreCompleto'] = 'El nombre completo es obligatorio.';
+    }
+
+    if ($form['descripcion'] === '') {
+        $errors['descripcion'] = 'La descripción es obligatoria.';
+    }
+
+    if ($form['areaConocimiento'] === '') {
+        $errors['areaConocimiento'] = 'El área de conocimiento es obligatoria.';
+    }
+
+    if ($form['carrera'] === '') {
+        $errors['carrera'] = 'La carrera es obligatoria.';
+    }
+
+    if ($form['numeroCreditos'] === '' || !is_numeric($form['numeroCreditos'])) {
+        $errors['numeroCreditos'] = 'El número de créditos es obligatorio y debe ser un número.';
+    }
+
+    if ($form['contenidoTematico'] === '') {
+        $errors['contenidoTematico'] = 'El contenido temático es obligatorio.';
+    }
+
+    if ($form['semestre'] === '' || !is_numeric($form['semestre'])) {
+        $errors['semestre'] = 'El semestre es obligatorio y debe ser un número.';
+    }
+
+    if ($form['profesor'] === '') {
+        $errors['profesor'] = 'El profesor es obligatorio.';
     }
 
     return $errors;

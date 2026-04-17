@@ -120,12 +120,28 @@ final class DependencyInjection
         return new AsignaturaWebMapper();
     }
 
-    // Placeholder - Repository será creado en capa de infraestructura
-    private static function getAsignaturaRepository()
+    public static function getAsignaturaPersistenceMapper(): AsignaturaPersistenceMapper
     {
-        // Esto será implementado cuando se cree el AsignaturaRepositoryMySQL
-        // que implementará SaveAsignaturaPort, UpdateAsignaturaPort,
-        // GetAsignaturaByIdPort, GetAllAsignaturasPort, DeleteAsignaturaPort
-        throw new RuntimeException('AsignaturaRepository no ha sido implementado aún');
+        ClassLoader::loadClass('AsignaturaPersistenceMapper');
+        return new AsignaturaPersistenceMapper();
+    }
+
+    public static function getAsignaturaRepository(): AsignaturaRepositoryMySQL
+    {
+        ClassLoader::loadClass('AsignaturaRepositoryMySQL');
+        return new AsignaturaRepositoryMySQL(self::getPdo(), self::getAsignaturaPersistenceMapper());
+    }
+
+    public static function getAsignaturaController(): AsignaturaController
+    {
+        ClassLoader::loadClass('AsignaturaController');
+        return new AsignaturaController(
+            self::getCreateAsignaturaUseCase(),
+            self::getUpdateAsignaturaUseCase(),
+            self::getGetAsignaturaByIdUseCase(),
+            self::getGetAllAsignaturasUseCase(),
+            self::getDeleteAsignaturaUseCase(),
+            self::getAsignaturaWebMapper()
+        );
     }
 }
